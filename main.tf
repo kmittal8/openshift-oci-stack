@@ -115,10 +115,7 @@ resource "oci_core_subnet" "k8s_subnet" {
   cidr_block     = var.k8s_subnet_cidr
   display_name   = "k8s-cluster-subnet"
   route_table_id = data.oci_core_vcn.existing.default_route_table_id
-  security_list_ids = [
-    var.existing_security_list_id,
-    oci_core_security_list.k8s_sl.id
-  ]
+  security_list_ids = [oci_core_security_list.k8s_sl.id]
 }
 
 # ---------------------------------------------------------------------------
