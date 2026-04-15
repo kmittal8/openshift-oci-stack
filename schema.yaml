@@ -1,0 +1,122 @@
+title: "Kubernetes Cluster on OCI"
+description: "Deploys a 3-node Kubernetes v1.32 cluster (1 master + 2 workers) on Ubuntu 22.04 using CRI-O runtime and Calico CNI. Workers auto-join the master using a pre-shared token."
+schemaVersion: 1.1.0
+version: "20240101"
+locale: en
+
+variableGroups:
+  - title: "Network"
+    variables:
+      - compartment_ocid
+      - region
+      - availability_domain
+      - vcn_id
+      - subnet_id
+
+  - title: "Access"
+    variables:
+      - ssh_public_key
+      - my_public_ip
+
+  - title: "Compute — Master Node"
+    variables:
+      - master_shape_ocpus
+      - master_shape_memory_in_gbs
+
+  - title: "Compute — Worker Nodes"
+    variables:
+      - worker_shape_ocpus
+      - worker_shape_memory_in_gbs
+      - boot_volume_size_in_gbs
+
+variables:
+  compartment_ocid:
+    title: "Compartment"
+    description: "OCI compartment where all resources will be created"
+    type: oci:identity:compartment:id
+    required: true
+
+  region:
+    title: "Region"
+    description: "OCI region for deployment"
+    type: oci:identity:region:name
+    required: true
+    default: "ap-sydney-1"
+
+  availability_domain:
+    title: "Availability Domain"
+    description: "Availability domain for all compute instances"
+    type: oci:identity:availabilitydomain:name
+    dependsOn:
+      compartmentId: compartment_ocid
+    required: true
+
+  vcn_id:
+    title: "Virtual Cloud Network (VCN)"
+    description: "Select an existing VCN to deploy the cluster into"
+    type: oci:core:vcn:id
+    dependsOn:
+      compartmentId: compartment_ocid
+    required: true
+
+  subnet_id:
+    title: "Public Subnet"
+    description: "Select a public subnet within the VCN (all nodes get public IPs)"
+    type: oci:core:subnet:id
+    dependsOn:
+      compartmentId: compartment_ocid
+      vcnId: vcn_id
+    required: true
+
+  ssh_public_key:
+    title: "SSH Public Key"
+    description: "Public key added to authorized_keys on all VMs (vibe.key.pub pre-filled)"
+    type: string
+    required: true
+
+  my_public_ip:
+    title: "Your Public IP Address"
+    description: "Your public IP — only this IP can SSH to VMs and reach the K8s API (port 6443)"
+    type: string
+    required: true
+    default: "118.148.64.87"
+
+  master_shape_ocpus:
+    title: "Master — OCPUs"
+    description: "Number of OCPUs for the master node (minimum 2)"
+    type: number
+    default: 2
+    minimum: 2
+    maximum: 8
+
+  master_shape_memory_in_gbs:
+    title: "Master — Memory (GB)"
+    description: "RAM in GB for the master node (minimum 4 GB)"
+    type: number
+    default: 6
+    minimum: 4
+    maximum: 32
+
+  worker_shape_ocpus:
+    title: "Workers — OCPUs each"
+    description: "Number of OCPUs per worker node (minimum 2)"
+    type: number
+    default: 2
+    minimum: 2
+    maximum: 8
+
+  worker_shape_memory_in_gbs:
+    title: "Workers — Memory each (GB)"
+    description: "RAM in GB per worker node (minimum 4 GB)"
+    type: number
+    default: 4
+    minimum: 4
+    maximum: 32
+
+  boot_volume_size_in_gbs:
+    title: "Boot Volume Size (GB)"
+    description: "Boot disk size in GB for all nodes"
+    type: number
+    default: 50
+    minimum: 50
+    maximum: 200
