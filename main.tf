@@ -50,61 +50,75 @@ data "oci_core_images" "ubuntu_22_04" {
 }
 
 # ---------------------------------------------------------------------------
-# Network Security Group — attached to all 3 nodes
-# We use a new NSG rather than modifying the existing security list
+# Read the existing VCN to reuse its default route table
+# (the default route table already has the Internet Gateway route)
 # ---------------------------------------------------------------------------
-resource "oci_core_network_security_group" "k8s_nsg" {
-  compartment_id = var.compartment_ocid
-  vcn_id         = var.vcn_id
-  display_name   = "k8s-cluster-nsg"
+data "oci_core_vcn" "existing" {
+  vcn_id = var.vcn_id
 }
 
-# SSH from user's public IP
-resource "oci_core_network_security_group_security_rule" "allow_ssh" {
-  network_security_group_id = oci_core_network_security_group.k8s_nsg.id
-  direction                 = "INGRESS"
-  protocol                  = "6"
-  source                    = "${var.my_public_ip}/32"
-  source_type               = "CIDR_BLOCK"
-  tcp_options {
-    destination_port_range {
+# ---------------------------------------------------------------------------
+# New K8s Security List — contains only K8s-specific rules
+# Your existing SL (var.existing_security_list_id) is also attached to the
+# subnet so its rules are preserved untouched.
+# ---------------------------------------------------------------------------
+resource "oci_core_security_list" "k8s_sl" {
+  compartment_id = var.compartment_ocid
+  vcn_id         = var.vcn_id
+  display_name   = "k8s-cluster-sl"
+
+  # SSH from your public IP only
+  ingress_security_rules {
+    protocol  = "6"
+    source    = "${var.my_public_ip}/32"
+    stateless = false
+    tcp_options {
       min = 22
       max = 22
     }
   }
-}
 
-# K8s API server from user's public IP
-resource "oci_core_network_security_group_security_rule" "allow_k8s_api" {
-  network_security_group_id = oci_core_network_security_group.k8s_nsg.id
-  direction                 = "INGRESS"
-  protocol                  = "6"
-  source                    = "${var.my_public_ip}/32"
-  source_type               = "CIDR_BLOCK"
-  tcp_options {
-    destination_port_range {
+  # Kubernetes API server from your public IP only
+  ingress_security_rules {
+    protocol  = "6"
+    source    = "${var.my_public_ip}/32"
+    stateless = false
+    tcp_options {
       min = 6443
       max = 6443
     }
   }
+
+  # All traffic within the K8s subnet (node-to-node: kubelet, etcd, Calico, etc.)
+  ingress_security_rules {
+    protocol  = "all"
+    source    = var.k8s_subnet_cidr
+    stateless = false
+  }
+
+  # All outbound traffic (apt, image pulls, Calico, etc.)
+  egress_security_rules {
+    protocol    = "all"
+    destination = "0.0.0.0/0"
+    stateless   = false
+  }
 }
 
-# All traffic between cluster nodes (self-referencing NSG)
-resource "oci_core_network_security_group_security_rule" "allow_internal_ingress" {
-  network_security_group_id = oci_core_network_security_group.k8s_nsg.id
-  direction                 = "INGRESS"
-  protocol                  = "all"
-  source                    = oci_core_network_security_group.k8s_nsg.id
-  source_type               = "NETWORK_SECURITY_GROUP"
-}
-
-# All outbound traffic (for apt, kubeadm image pulls, Calico, etc.)
-resource "oci_core_network_security_group_security_rule" "allow_all_egress" {
-  network_security_group_id = oci_core_network_security_group.k8s_nsg.id
-  direction                 = "EGRESS"
-  protocol                  = "all"
-  destination               = "0.0.0.0/0"
-  destination_type          = "CIDR_BLOCK"
+# ---------------------------------------------------------------------------
+# Dedicated subnet for the K8s cluster
+# Attaches both: existing SL (preserved) + new K8s SL (our rules)
+# Uses the VCN's default route table so internet access works out of the box
+# ---------------------------------------------------------------------------
+resource "oci_core_subnet" "k8s_subnet" {
+  compartment_id = var.compartment_ocid
+  vcn_id         = var.vcn_id
+  cidr_block     = var.k8s_subnet_cidr
+  display_name   = "k8s-cluster-subnet"
+  route_table_id = data.oci_core_vcn.existing.default_route_table_id
+  security_list_ids = [
+    var.existing_security_list_id,
+    oci_core_security_list.k8s_sl.id
+  ]
 }
 
 # ---------------------------------------------------------------------------
@@ -128,10 +142,9 @@ resource "oci_core_instance" "master" {
   }
 
   create_vnic_details {
-    subnet_id        = var.subnet_id
+    subnet_id        = oci_core_subnet.k8s_subnet.id
     assign_public_ip = true
     display_name     = "k8s-master-vnic"
-    nsg_ids          = [oci_core_network_security_group.k8s_nsg.id]
   }
 
   metadata = {
@@ -145,7 +158,7 @@ resource "oci_core_instance" "master" {
 # ---------------------------------------------------------------------------
 # Worker Nodes (2)
 # Workers depend on master (via master.private_ip reference) so Terraform
-# will create them only after master's private IP is known.
+# creates them only after master's private IP is known.
 # ---------------------------------------------------------------------------
 resource "oci_core_instance" "worker" {
   count               = 2
@@ -166,10 +179,9 @@ resource "oci_core_instance" "worker" {
   }
 
   create_vnic_details {
-    subnet_id        = var.subnet_id
+    subnet_id        = oci_core_subnet.k8s_subnet.id
     assign_public_ip = true
     display_name     = "k8s-worker-${count.index + 1}-vnic"
-    nsg_ids          = [oci_core_network_security_group.k8s_nsg.id]
   }
 
   metadata = {

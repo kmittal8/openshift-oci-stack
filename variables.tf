@@ -19,9 +19,16 @@ variable "vcn_id" {
   type        = string
 }
 
-variable "subnet_id" {
-  description = "OCID of the existing public subnet for the cluster nodes"
+variable "existing_security_list_id" {
+  description = "OCID of your existing Security List — attached to the K8s subnet alongside the new K8s SL (its rules are not modified)"
   type        = string
+  default     = "ocid1.securitylist.oc1.ap-sydney-1.aaaaaaaaf6eh7ycqgminp5gceqjv2ylnt6ixu4ptksq3xrfyjoncjbrefziq"
+}
+
+variable "k8s_subnet_cidr" {
+  description = "CIDR block for the new dedicated K8s subnet (must not overlap existing subnets in the VCN)"
+  type        = string
+  default     = "10.0.10.0/24"
 }
 
 variable "ssh_public_key" {

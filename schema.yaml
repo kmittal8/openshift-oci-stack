@@ -11,7 +11,8 @@ variableGroups:
       - region
       - availability_domain
       - vcn_id
-      - subnet_id
+      - existing_security_list_id
+      - k8s_subnet_cidr
 
   - title: "Access"
     variables:
@@ -53,20 +54,24 @@ variables:
 
   vcn_id:
     title: "Virtual Cloud Network (VCN)"
-    description: "Select an existing VCN to deploy the cluster into"
+    description: "Select the existing VCN to deploy the cluster into"
     type: oci:core:vcn:id
     dependsOn:
       compartmentId: compartment_ocid
     required: true
 
-  subnet_id:
-    title: "Public Subnet"
-    description: "Select a public subnet within the VCN (all nodes get public IPs)"
-    type: oci:core:subnet:id
-    dependsOn:
-      compartmentId: compartment_ocid
-      vcnId: vcn_id
+  existing_security_list_id:
+    title: "Existing Security List OCID"
+    description: "OCID of your existing Security List — it will be attached to the new K8s subnet alongside the new K8s SL. Its rules are not changed."
+    type: string
     required: true
+
+  k8s_subnet_cidr:
+    title: "K8s Subnet CIDR"
+    description: "CIDR for the new dedicated K8s subnet — must not overlap existing subnets in the VCN"
+    type: string
+    required: true
+    default: "10.0.10.0/24"
 
   ssh_public_key:
     title: "SSH Public Key"
@@ -76,14 +81,13 @@ variables:
 
   my_public_ip:
     title: "Your Public IP Address"
-    description: "Your public IP — only this IP can SSH to VMs and reach the K8s API (port 6443)"
+    description: "Only this IP can SSH to VMs (port 22) and reach the K8s API (port 6443)"
     type: string
     required: true
     default: "118.148.64.87"
 
   master_shape_ocpus:
     title: "Master — OCPUs"
-    description: "Number of OCPUs for the master node (minimum 2)"
     type: number
     default: 2
     minimum: 2
@@ -91,7 +95,6 @@ variables:
 
   master_shape_memory_in_gbs:
     title: "Master — Memory (GB)"
-    description: "RAM in GB for the master node (minimum 4 GB)"
     type: number
     default: 6
     minimum: 4
@@ -99,7 +102,6 @@ variables:
 
   worker_shape_ocpus:
     title: "Workers — OCPUs each"
-    description: "Number of OCPUs per worker node (minimum 2)"
     type: number
     default: 2
     minimum: 2
@@ -107,7 +109,6 @@ variables:
 
   worker_shape_memory_in_gbs:
     title: "Workers — Memory each (GB)"
-    description: "RAM in GB per worker node (minimum 4 GB)"
     type: number
     default: 4
     minimum: 4
@@ -115,7 +116,6 @@ variables:
 
   boot_volume_size_in_gbs:
     title: "Boot Volume Size (GB)"
-    description: "Boot disk size in GB for all nodes"
     type: number
     default: 50
     minimum: 50
