@@ -4,7 +4,10 @@ exec > >(tee /var/log/k8s-worker-init.log) 2>&1
 
 echo "=== [$(date)] Starting Kubernetes Worker Node Setup ==="
 
-# --- 1. Disable swap (required by kubelet) ---
+# --- 1. Allow intra-cluster traffic (OCI Ubuntu image has a REJECT rule by default) ---
+iptables -I INPUT -s 192.168.0.0/16 -j ACCEPT
+
+# --- 2. Disable swap (required by kubelet) ---
 swapoff -a
 sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
