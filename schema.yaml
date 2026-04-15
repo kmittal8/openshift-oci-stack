@@ -11,7 +11,6 @@ variableGroups:
       - region
       - availability_domain
       - vcn_id
-      - k8s_subnet_cidr
 
   - title: "Access"
     variables:
@@ -58,13 +57,6 @@ variables:
     dependsOn:
       compartmentId: compartment_ocid
     required: true
-
-  k8s_subnet_cidr:
-    title: "K8s Subnet CIDR"
-    description: "CIDR for the new dedicated K8s subnet — must not overlap existing subnets in the VCN"
-    type: string
-    required: true
-    default: "10.0.10.0/24"
 
   ssh_public_key:
     title: "SSH Public Key"

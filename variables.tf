@@ -19,12 +19,6 @@ variable "vcn_id" {
   type        = string
 }
 
-variable "k8s_subnet_cidr" {
-  description = "CIDR block for the new dedicated K8s subnet (must not overlap existing subnets in the VCN)"
-  type        = string
-  default     = "10.0.10.0/24"
-}
-
 variable "ssh_public_key" {
   description = "SSH public key to be added to authorized_keys on all VMs"
   type        = string

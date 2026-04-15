@@ -34,7 +34,8 @@ resource "random_string" "token_suffix" {
 }
 
 locals {
-  kubeadm_token = "${random_string.token_prefix.result}.${random_string.token_suffix.result}"
+  kubeadm_token   = "${random_string.token_prefix.result}.${random_string.token_suffix.result}"
+  k8s_subnet_cidr = cidrsubnet(data.oci_core_vcn.existing.cidr_block, 8, 100)
 }
 
 # ---------------------------------------------------------------------------
@@ -92,7 +93,7 @@ resource "oci_core_security_list" "k8s_sl" {
   # All traffic within the K8s subnet (node-to-node: kubelet, etcd, Calico, etc.)
   ingress_security_rules {
     protocol  = "all"
-    source    = var.k8s_subnet_cidr
+    source    = local.k8s_subnet_cidr
     stateless = false
   }
 
@@ -112,7 +113,7 @@ resource "oci_core_security_list" "k8s_sl" {
 resource "oci_core_subnet" "k8s_subnet" {
   compartment_id = var.compartment_ocid
   vcn_id         = var.vcn_id
-  cidr_block     = var.k8s_subnet_cidr
+  cidr_block     = local.k8s_subnet_cidr
   display_name   = "k8s-cluster-subnet"
   route_table_id = data.oci_core_vcn.existing.default_route_table_id
   security_list_ids = [oci_core_security_list.k8s_sl.id]
