@@ -31,7 +31,7 @@ apt-get install -y apt-transport-https ca-certificates curl gpg
 
 mkdir -p /etc/apt/keyrings
 curl -fsSL "https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/Release.key" \
-  | gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
+  | gpg --batch --yes --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
 
 echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/ /" \
   > /etc/apt/sources.list.d/cri-o.list
@@ -44,7 +44,7 @@ echo "CRI-O status: $(systemctl is-active crio)"
 # --- 5. Install Kubernetes v1.32 (kubelet, kubeadm) ---
 KUBERNETES_VERSION=v1.32
 curl -fsSL "https://pkgs.k8s.io/core:/stable:/$KUBERNETES_VERSION/deb/Release.key" \
-  | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  | gpg --batch --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
 echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/$KUBERNETES_VERSION/deb/ /" \
   > /etc/apt/sources.list.d/kubernetes.list
