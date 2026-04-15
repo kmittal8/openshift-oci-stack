@@ -1,0 +1,24 @@
+# Terraform state — contains all resource details including sensitive values
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+
+# Local .terraform directory — downloaded provider plugins (large binaries)
+.terraform/
+.terraform.lock.hcl
+
+# Variable files — often contain secrets, API keys, passwords
+*.tfvars
+*.tfvars.json
+
+# Crash and override files
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI config
+.terraformrc
+terraform.rc

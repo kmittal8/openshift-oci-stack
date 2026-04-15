@@ -1,7 +1,6 @@
 variable "compartment_ocid" {
   description = "OCI Compartment OCID where resources will be created"
   type        = string
-  default     = "ocid1.compartment.oc1..aaaaaaaaj7w5lilu5pgyscpkgodrpuvs254ixag5wy5k27j6x5wwbeughjia"
 }
 
 variable "region" {
