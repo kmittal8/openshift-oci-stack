@@ -63,7 +63,7 @@ variables:
     title: "Internet Gateway OCID"
     description: "OCID of the Internet Gateway in your VCN. Find it: OCI Console > Networking > Virtual Cloud Networks > [your VCN] > Internet Gateways. Create one first if it does not exist."
     type: string
-    required: true
+    required: false
 
   ssh_public_key:
     title: "SSH Public Key"
