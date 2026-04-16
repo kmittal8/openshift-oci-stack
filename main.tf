@@ -57,15 +57,7 @@ data "oci_core_vcn" "existing" {
   vcn_id = var.vcn_id
 }
 
-# Look up the Internet Gateway in the VCN
-# (the default route table may point to LPG — we need IGW for public internet)
-data "oci_core_internet_gateways" "igw" {
-  compartment_id = var.compartment_ocid
-  vcn_id         = var.vcn_id
-  state          = "AVAILABLE"
-}
-
-# Dedicated route table for the K8s subnet — routes all traffic via IGW
+# Dedicated route table for the K8s subnet — routes all traffic via user-supplied IGW
 resource "oci_core_route_table" "k8s_rt" {
   compartment_id = var.compartment_ocid
   vcn_id         = var.vcn_id
@@ -74,7 +66,7 @@ resource "oci_core_route_table" "k8s_rt" {
   route_rules {
     destination       = "0.0.0.0/0"
     destination_type  = "CIDR_BLOCK"
-    network_entity_id = data.oci_core_internet_gateways.igw.gateways[0].id
+    network_entity_id = var.internet_gateway_id
   }
 }
 

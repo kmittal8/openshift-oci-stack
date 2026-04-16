@@ -11,6 +11,7 @@ variableGroups:
       - region
       - availability_domain
       - vcn_id
+      - internet_gateway_id
 
   - title: "Access"
     variables:
@@ -56,6 +57,12 @@ variables:
     type: oci:core:vcn:id
     dependsOn:
       compartmentId: compartment_ocid
+    required: true
+
+  internet_gateway_id:
+    title: "Internet Gateway OCID"
+    description: "OCID of the Internet Gateway in your VCN. Find it: OCI Console > Networking > Virtual Cloud Networks > [your VCN] > Internet Gateways. Create one first if it does not exist."
+    type: string
     required: true
 
   ssh_public_key:

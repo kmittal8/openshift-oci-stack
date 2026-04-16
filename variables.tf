@@ -19,6 +19,11 @@ variable "vcn_id" {
   type        = string
 }
 
+variable "internet_gateway_id" {
+  description = "OCID of the Internet Gateway in your VCN. Find it: OCI Console > Networking > Virtual Cloud Networks > [your VCN] > Internet Gateways"
+  type        = string
+}
+
 variable "ssh_public_key" {
   description = "SSH public key to be added to authorized_keys on all VMs"
   type        = string
