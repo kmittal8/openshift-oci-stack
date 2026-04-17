@@ -27,6 +27,14 @@ net.ipv4.ip_forward                 = 1
 EOF
 sysctl --system
 
+# --- 4. Wait for APT locks to be released (cloud-init races with system apt) ---
+echo "Waiting for apt locks..."
+while lsof /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/cache/apt/archives/lock 2>/dev/null | grep -q lock; do
+  echo "[$(date)] APT locked, waiting 5s..."
+  sleep 5
+done
+echo "[$(date)] APT locks free."
+
 # --- 4. Install CRI-O v1.32 container runtime ---
 CRIO_VERSION=v1.32
 apt-get update -y
