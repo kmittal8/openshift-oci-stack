@@ -27,13 +27,15 @@ net.ipv4.ip_forward                 = 1
 EOF
 sysctl --system
 
-# --- 4. Wait for APT locks to be released (cloud-init races with system apt) ---
-echo "Waiting for apt locks..."
-while lsof /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/cache/apt/archives/lock 2>/dev/null | grep -q lock; do
-  echo "[$(date)] APT locked, waiting 5s..."
+# --- 4. Stop unattended-upgrades and wait for APT to be fully free ---
+echo "Stopping unattended-upgrades..."
+systemctl stop unattended-upgrades 2>/dev/null || true
+systemctl disable unattended-upgrades 2>/dev/null || true
+while pgrep -x unattended-upgr > /dev/null || pgrep -x apt-get > /dev/null || pgrep -x dpkg > /dev/null; do
+  echo "[$(date)] Waiting for apt/dpkg processes to exit..."
   sleep 5
 done
-echo "[$(date)] APT locks free."
+echo "[$(date)] APT free."
 
 # --- 4. Install CRI-O v1.32 container runtime ---
 CRIO_VERSION=v1.32
