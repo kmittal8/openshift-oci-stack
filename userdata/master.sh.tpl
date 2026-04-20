@@ -27,14 +27,13 @@ net.ipv4.ip_forward                 = 1
 EOF
 sysctl --system
 
-# --- 4. Stop unattended-upgrades and wait for APT to be fully free ---
-echo "Stopping unattended-upgrades..."
-systemctl stop unattended-upgrades 2>/dev/null || true
-systemctl disable unattended-upgrades 2>/dev/null || true
-while pgrep -x unattended-upgr > /dev/null || pgrep -x apt-get > /dev/null || pgrep -x dpkg > /dev/null; do
-  echo "[$(date)] Waiting for apt/dpkg processes to exit..."
-  sleep 5
-done
+# --- 4. Stop all apt-related services and wait for locks via flock ---
+echo "Stopping apt services..."
+systemctl stop unattended-upgrades apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
+systemctl disable unattended-upgrades apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
+echo "[$(date)] Waiting for dpkg/apt locks via flock..."
+flock /var/lib/dpkg/lock-frontend echo "[$(date)] dpkg lock acquired and released."
+flock /var/lib/apt/lists/lock echo "[$(date)] apt lists lock acquired and released."
 echo "[$(date)] APT free."
 
 # --- 4. Install CRI-O v1.32 container runtime ---
