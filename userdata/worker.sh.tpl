@@ -4,8 +4,14 @@ exec > >(tee /var/log/k8s-worker-init.log) 2>&1
 
 echo "=== [$(date)] Starting Kubernetes Worker Node Setup ==="
 
-# --- 1. Allow intra-cluster traffic (OCI Ubuntu image has a REJECT rule by default) ---
+# --- 1. Switch to iptables-nft so our rules and kube-proxy/Calico use the same backend ---
+update-alternatives --set iptables  /usr/sbin/iptables-nft
+update-alternatives --set ip6tables /usr/sbin/ip6tables-nft
+
+# --- 1b. Allow intra-cluster traffic (OCI Ubuntu image has a REJECT rule by default) ---
 iptables -I INPUT -s 192.168.0.0/16 -j ACCEPT
+iptables -I INPUT -s 10.96.0.0/12 -j ACCEPT
+iptables -I FORWARD -j ACCEPT
 
 # --- 2. Disable swap (required by kubelet) ---
 swapoff -a
