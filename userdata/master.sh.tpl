@@ -100,6 +100,7 @@ echo "Master private IP detected: $MASTER_PRIVATE_IP"
 kubeadm init \
   --apiserver-advertise-address="$MASTER_PRIVATE_IP" \
   --pod-network-cidr=192.168.0.0/16 \
+  --cri-socket unix:///run/crio/crio.sock \
   --token "${kubeadm_token}" \
   --token-ttl 0
 
