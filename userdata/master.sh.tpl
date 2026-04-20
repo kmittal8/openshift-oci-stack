@@ -105,6 +105,16 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 echo "Installing Calico CNI..."
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.0/manifests/calico.yaml
 
+# --- 9. Install KubeVirt ---
+echo "Installing KubeVirt..."
+RELEASE=$(curl -s https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt)
+echo "KubeVirt version: $RELEASE"
+kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/$${RELEASE}/kubevirt-operator.yaml
+kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/$${RELEASE}/kubevirt-cr.yaml
+echo "Waiting for KubeVirt to become available..."
+kubectl -n kubevirt wait kv kubevirt --for condition=Available --timeout=300s
+echo "KubeVirt installed successfully."
+
 echo "=== [$(date)] Master Node Setup Complete ==="
 echo "Cluster initialized with token: ${kubeadm_token}"
 echo "Workers will poll this node and auto-join using the pre-shared token."
