@@ -57,11 +57,11 @@ data "oci_core_vcn" "existing" {
   vcn_id = var.vcn_id
 }
 
-# Dedicated route table for the K8s subnet — routes all traffic via user-supplied IGW
+# Dedicated route table for the OCP subnet — routes all traffic via user-supplied IGW
 resource "oci_core_route_table" "k8s_rt" {
   compartment_id = var.compartment_ocid
   vcn_id         = var.vcn_id
-  display_name   = "k8s-cluster-rt"
+  display_name   = "ocp-cluster-rt"
 
   route_rules {
     destination       = "0.0.0.0/0"
@@ -78,7 +78,7 @@ resource "oci_core_route_table" "k8s_rt" {
 resource "oci_core_security_list" "k8s_sl" {
   compartment_id = var.compartment_ocid
   vcn_id         = var.vcn_id
-  display_name   = "k8s-cluster-sl"
+  display_name   = "ocp-cluster-sl"
 
   # SSH from your public IP only
   ingress_security_rules {
@@ -126,7 +126,7 @@ resource "oci_core_subnet" "k8s_subnet" {
   compartment_id = var.compartment_ocid
   vcn_id         = var.vcn_id
   cidr_block     = local.k8s_subnet_cidr
-  display_name   = "k8s-cluster-subnet"
+  display_name   = "ocp-cluster-subnet"
   route_table_id = oci_core_route_table.k8s_rt.id
   security_list_ids = [oci_core_security_list.k8s_sl.id]
 }
@@ -137,7 +137,7 @@ resource "oci_core_subnet" "k8s_subnet" {
 resource "oci_core_instance" "master" {
   compartment_id      = var.compartment_ocid
   availability_domain = var.availability_domain
-  display_name        = "k8s-master"
+  display_name        = "ocp-master"
   shape               = "VM.Standard.E4.Flex"
 
   shape_config {
@@ -154,7 +154,7 @@ resource "oci_core_instance" "master" {
   create_vnic_details {
     subnet_id        = oci_core_subnet.k8s_subnet.id
     assign_public_ip = true
-    display_name     = "k8s-master-vnic"
+    display_name     = "ocp-master-vnic"
   }
 
   metadata = {
@@ -174,7 +174,7 @@ resource "oci_core_instance" "worker" {
   count               = 2
   compartment_id      = var.compartment_ocid
   availability_domain = var.availability_domain
-  display_name        = "k8s-worker-${count.index + 1}"
+  display_name        = "ocp-worker-${count.index + 1}"
   shape               = "VM.Standard.E4.Flex"
 
   shape_config {
@@ -191,7 +191,7 @@ resource "oci_core_instance" "worker" {
   create_vnic_details {
     subnet_id        = oci_core_subnet.k8s_subnet.id
     assign_public_ip = true
-    display_name     = "k8s-worker-${count.index + 1}-vnic"
+    display_name     = "ocp-worker-${count.index + 1}-vnic"
   }
 
   metadata = {

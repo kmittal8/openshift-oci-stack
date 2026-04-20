@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euxo pipefail
-exec > >(tee /var/log/k8s-master-init.log) 2>&1
+exec > >(tee /var/log/ocp-master-init.log) 2>&1
 
-echo "=== [$(date)] Starting Kubernetes Master Node Setup ==="
+echo "=== [$(date)] Starting OCP Master Node Setup ==="
 
 # --- 1. Switch to iptables-nft so our rules and kube-proxy/Calico use the same backend ---
 update-alternatives --set iptables  /usr/sbin/iptables-nft
@@ -121,7 +121,7 @@ echo "Waiting for KubeVirt to become available..."
 kubectl -n kubevirt wait kv kubevirt --for condition=Available --timeout=300s
 echo "KubeVirt installed successfully."
 
-echo "=== [$(date)] Master Node Setup Complete ==="
+echo "=== [$(date)] OCP Master Node Setup Complete ==="
 echo "Cluster initialized with token: ${kubeadm_token}"
 echo "Workers will poll this node and auto-join using the pre-shared token."
-echo "Monitor worker join progress: tail -f /var/log/k8s-worker-init.log (on each worker)"
+echo "Monitor worker join progress: tail -f /var/log/ocp-worker-init.log (on each worker)"

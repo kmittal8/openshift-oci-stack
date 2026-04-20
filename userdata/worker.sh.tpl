@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euxo pipefail
-exec > >(tee /var/log/k8s-worker-init.log) 2>&1
+exec > >(tee /var/log/ocp-worker-init.log) 2>&1
 
-echo "=== [$(date)] Starting Kubernetes Worker Node Setup ==="
+echo "=== [$(date)] Starting OCP Worker Node Setup ==="
 
 # --- 1. Switch to iptables-nft so our rules and kube-proxy/Calico use the same backend ---
 update-alternatives --set iptables  /usr/sbin/iptables-nft
@@ -107,4 +107,4 @@ kubeadm join "$MASTER_IP:6443" \
   --token "${kubeadm_token}" \
   --discovery-token-unsafe-skip-ca-verification
 
-echo "=== [$(date)] Worker Node Successfully Joined Kubernetes Cluster ==="
+echo "=== [$(date)] OCP Worker Node Successfully Joined Cluster ==="
