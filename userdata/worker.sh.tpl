@@ -27,14 +27,31 @@ net.ipv4.ip_forward                 = 1
 EOF
 sysctl --system
 
-# --- 4. Stop all apt-related services and wait for locks via flock ---
-echo "Stopping apt services..."
-systemctl stop unattended-upgrades apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
-systemctl disable unattended-upgrades apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
-echo "[$(date)] Waiting for dpkg/apt locks via flock..."
-flock /var/lib/dpkg/lock-frontend echo "[$(date)] dpkg lock acquired and released."
-flock /var/lib/apt/lists/lock echo "[$(date)] apt lists lock acquired and released."
-echo "[$(date)] APT free."
+# --- 4. Stop apt background work so it cannot grab locks again ---
+systemctl stop apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+systemctl stop apt-daily.service apt-daily-upgrade.service unattended-upgrades.service 2>/dev/null || true
+systemctl mask apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+
+wait_for_apt() {
+  local lock
+  local lock_files=(
+    /var/lib/dpkg/lock-frontend
+    /var/lib/dpkg/lock
+    /var/lib/apt/lists/lock
+  )
+  for lock in "${lock_files[@]}"; do
+    echo "[$(date)] Waiting for $lock..."
+    while fuser "$lock" >/dev/null 2>&1; do
+      pids="$(fuser "$lock" 2>/dev/null | tr -s ' ' ' ')"
+      echo "[$(date)] Held by: $pids"
+      sleep 2
+    done
+  done
+}
+wait_for_apt
+
+echo "[$(date)] Cleaning up dpkg interrupts..."
+dpkg --configure -a
 
 # --- 4. Install CRI-O v1.32 container runtime ---
 CRIO_VERSION=v1.32
