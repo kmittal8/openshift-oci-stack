@@ -35,7 +35,7 @@ resource "random_string" "token_suffix" {
 
 locals {
   kubeadm_token   = "${random_string.token_prefix.result}.${random_string.token_suffix.result}"
-  k8s_subnet_cidr = cidrsubnet(data.oci_core_vcn.existing.cidr_block, 8, 100)
+  k8s_subnet_cidr = cidrsubnet(data.oci_core_vcn.existing.cidr_block, 8, 101)
 }
 
 # ---------------------------------------------------------------------------
