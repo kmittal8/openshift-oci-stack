@@ -71,6 +71,10 @@ curl -fsSL "https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/Release
 echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/ /" \
   > /etc/apt/sources.list.d/cri-o.list
 
+# Block third-party mirrors that return 403 for OCI IPs
+echo 'Acquire::https::mirror.firstyear.id.au::Enabled "false";' \
+  > /etc/apt/apt.conf.d/99block-mirrors
+
 apt-get update -y
 apt-get install -y cri-o
 systemctl enable --now crio
