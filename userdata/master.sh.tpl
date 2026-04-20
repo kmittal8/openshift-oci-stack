@@ -39,11 +39,11 @@ wait_for_apt() {
     /var/lib/dpkg/lock
     /var/lib/apt/lists/lock
   )
-  for lock in "${lock_files[@]}"; do
-    echo "[$(date)] Waiting for $lock..."
-    while fuser "$lock" >/dev/null 2>&1; do
-      pids="$(fuser "$lock" 2>/dev/null | tr -s ' ' ' ')"
-      echo "[$(date)] Held by: $pids"
+  for lock in "$${lock_files[@]}"; do
+    echo "[$(date)] Waiting for $${lock}..."
+    while fuser "$${lock}" >/dev/null 2>&1; do
+      pids="$$(fuser "$${lock}" 2>/dev/null | tr -s ' ' ' ')"
+      echo "[$(date)] Held by: $${pids}"
       sleep 2
     done
   done
