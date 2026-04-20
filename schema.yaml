@@ -10,8 +10,7 @@ variableGroups:
       - compartment_ocid
       - region
       - availability_domain
-      - vcn_id
-      - internet_gateway_id
+      - vcn_name
 
   - title: "Access"
     variables:
@@ -51,19 +50,12 @@ variables:
       compartmentId: compartment_ocid
     required: true
 
-  vcn_id:
-    title: "Virtual Cloud Network (VCN)"
-    description: "Select the existing VCN to deploy the cluster into"
-    type: oci:core:vcn:id
-    dependsOn:
-      compartmentId: compartment_ocid
-    required: true
-
-  internet_gateway_id:
-    title: "Internet Gateway OCID"
-    description: "OCID of the Internet Gateway in your VCN. Find it: OCI Console > Networking > Virtual Cloud Networks > [your VCN] > Internet Gateways. Create one first if it does not exist."
+  vcn_name:
+    title: "VCN Name"
+    description: "Display name of the existing VCN (e.g. ocp-vcn). Internet Gateway is auto-discovered."
     type: string
-    required: false
+    required: true
+    default: "ocp-vcn"
 
   ssh_public_key:
     title: "SSH Public Key"

@@ -14,15 +14,10 @@ variable "availability_domain" {
   type        = string
 }
 
-variable "vcn_id" {
-  description = "OCID of the existing VCN to deploy into"
+variable "vcn_name" {
+  description = "Display name of the existing VCN to deploy into (e.g. ocp-vcn)"
   type        = string
-}
-
-variable "internet_gateway_id" {
-  description = "OCID of the Internet Gateway in your VCN. Find it: OCI Console > Networking > Virtual Cloud Networks > [your VCN] > Internet Gateways"
-  type        = string
-  default     = ""
+  default     = "ocp-vcn"
 }
 
 variable "ssh_public_key" {

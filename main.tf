@@ -35,7 +35,8 @@ resource "random_string" "token_suffix" {
 
 locals {
   kubeadm_token   = "${random_string.token_prefix.result}.${random_string.token_suffix.result}"
-  k8s_subnet_cidr = cidrsubnet(data.oci_core_vcn.existing.cidr_block, 8, 101)
+  k8s_subnet_cidr = cidrsubnet(data.oci_core_vcns.existing.virtual_networks[0].cidr_block, 8, 101)
+  igw_id          = data.oci_core_internet_gateways.igw.gateways[0].id
 }
 
 # ---------------------------------------------------------------------------
@@ -51,22 +52,33 @@ data "oci_core_images" "ubuntu_22_04" {
 }
 
 # ---------------------------------------------------------------------------
-# Read the existing VCN
+# Look up existing VCN by display name (e.g. "ocp-vcn")
 # ---------------------------------------------------------------------------
-data "oci_core_vcn" "existing" {
-  vcn_id = var.vcn_id
+data "oci_core_vcns" "existing" {
+  compartment_id = var.compartment_ocid
+  display_name   = var.vcn_name
+}
+
+locals {
+  vcn_id = data.oci_core_vcns.existing.virtual_networks[0].id
+}
+
+# Look up the Internet Gateway attached to the VCN (auto-discovered)
+data "oci_core_internet_gateways" "igw" {
+  compartment_id = var.compartment_ocid
+  vcn_id         = local.vcn_id
 }
 
 # Dedicated route table for the OCP subnet — routes all traffic via user-supplied IGW
 resource "oci_core_route_table" "k8s_rt" {
   compartment_id = var.compartment_ocid
-  vcn_id         = var.vcn_id
+  vcn_id         = local.vcn_id
   display_name   = "ocp-cluster-rt"
 
   route_rules {
     destination       = "0.0.0.0/0"
     destination_type  = "CIDR_BLOCK"
-    network_entity_id = var.internet_gateway_id
+    network_entity_id = local.igw_id
   }
 }
 
@@ -77,7 +89,7 @@ resource "oci_core_route_table" "k8s_rt" {
 # ---------------------------------------------------------------------------
 resource "oci_core_security_list" "k8s_sl" {
   compartment_id = var.compartment_ocid
-  vcn_id         = var.vcn_id
+  vcn_id         = local.vcn_id
   display_name   = "ocp-cluster-sl"
 
   # SSH from your public IP only
@@ -124,7 +136,7 @@ resource "oci_core_security_list" "k8s_sl" {
 # ---------------------------------------------------------------------------
 resource "oci_core_subnet" "k8s_subnet" {
   compartment_id = var.compartment_ocid
-  vcn_id         = var.vcn_id
+  vcn_id         = local.vcn_id
   cidr_block     = local.k8s_subnet_cidr
   display_name   = "ocp-cluster-subnet"
   route_table_id = oci_core_route_table.k8s_rt.id
